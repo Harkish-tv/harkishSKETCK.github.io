@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sketch Pad</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #2d3436;
+            margin: 0 0 20px 0;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        button svg {
+            pointer-events: none;
+            width: 18px;
+            height: 18px;
+        }
+
+        #resetBtn {
+            background: #ff7675;
+            color: white;
+        }
+
+        #undoBtn, #redoBtn {
+            background: #636e72;
+            color: white;
+        }
+
+        #sendBtn {
+            background: #00b894;
+            color: white;
+        }
+
+        #drawArea {
+            border: 2px solid #dfe6e9;
+            border-radius: 8px;
+            touch-action: none;
+            background: white;
+            width: 100%;
+            height: 900px;
+        }
+
+        .credit {
+            text-align: center;
+            color: #636e72;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+                width: 95%;
+            }
+            
+            #drawArea {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✏️ Sketch With Scribi</h1>
+        <div class="controls">
+            <button id="resetBtn" onclick="resetDrawing()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M2.5 2v6h6M21.5 22v-6h-6M22 11.5A10 10 0 0 0 5.68 3.68M2 12.5a10 10 0 0 0 16.32 6.32"/>
+                </svg>
+                Reset
+            </button>
+            <button id="undoBtn" onclick="undo()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l6-6 6 6M9 3v12M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z"/>
+                </svg>
+                Undo
+            </button>
+            <button id="redoBtn" onclick="redo()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 9l-6 6-6-6M15 15V3M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z"/>
+                </svg>
+                Redo
+            </button>
+            <button id="sendBtn" onclick="sendDrawing()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                </svg>
+                Send
+            </button>
+        </div>
+        <svg id="drawArea" width="1200" height="900"></svg>
+    </div>
+    
+    <div class="credit">Draw something amazing! (Click and drag to sketch)</div>
+    <div class="loading" id="loading">Sending...</div>
+
+    <script>
+        const svg = document.getElementById('drawArea');
+        let isDrawing = false;
+        let currentPath = null;
+        let history = [];
+        let currentStep = -1;
+
+        // Initialize SVG drawing
+        svg.addEventListener('mousedown', startDrawing);
+        svg.addEventListener('mousemove', draw);
+        svg.addEventListener('mouseup', endDrawing);
+        svg.addEventListener('mouseleave', endDrawing);
+        
+        // Touch events
+        svg.addEventListener('touchstart', startDrawing);
+        svg.addEventListener('touchmove', draw);
+        svg.addEventListener('touchend', endDrawing);
+
+        function startDrawing(e) {
+            e.preventDefault();
+            isDrawing = true;
+            const point = getCoordinates(e);
+            
+            currentPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            currentPath.setAttribute('stroke', '#000000');
+            currentPath.setAttribute('fill', 'none');
+            currentPath.setAttribute('stroke-width', '2');
+            currentPath.setAttribute('d', `M ${point.x} ${point.y}`);
+            
+            svg.appendChild(currentPath);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+            const point = getCoordinates(e);
+            const pathData = currentPath.getAttribute('d');
+            currentPath.setAttribute('d', `${pathData} L ${point.x} ${point.y}`);
+        }
+
+        function endDrawing() {
+            if (!isDrawing) return;
+            isDrawing = false;
+            
+            // Update history only if actual drawing occurred
+            if (currentPath.getAttribute('d').split(' ').length > 2) {
+                updateHistory();
+            } else {
+                svg.removeChild(currentPath);
+            }
+            currentPath = null;
+        }
+
+        function getCoordinates(e) {
+            const rect = svg.getBoundingClientRect();
+            if (e.touches) {
+                return {
+                    x: e.touches[0].clientX - rect.left,
+                    y: e.touches[0].clientY - rect.top
+                };
+            }
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+
+        function updateHistory() {
+            history = history.slice(0, currentStep + 1);
+            history.push(svg.innerHTML);
+            currentStep = history.length - 1;
+        }
+
+        function resetDrawing() {
+            svg.innerHTML = '';
+            history = [];
+            currentStep = -1;
+        }
+
+        function undo() {
+            if (currentStep > 0) {
+                currentStep--;
+                svg.innerHTML = history[currentStep];
+            } else if (currentStep === 0) {
+                currentStep--;
+                svg.innerHTML = '';
+            }
+        }
+
+        function redo() {
+            if (currentStep < history.length - 1) {
+                currentStep++;
+                svg.innerHTML = history[currentStep];
+            }
+        }
+
+        async function sendDrawing() {
+            // Get SVG data
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const svgBlob = new Blob([svgData], {type: 'image/svg+xml'});
+            
+            // Create PNG from SVG
+            const img = new Image();
+            const url = URL.createObjectURL(svgBlob);
+            
+            img.onload = async () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = svg.width.baseVal.value;
+                canvas.height = svg.height.baseVal.value;
+                const ctx = canvas.getContext('2d');
+                
+                // Draw white background
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw SVG image
+                ctx.drawImage(img, 0, 0);
+                
+                // Download PNG
+                const pngUrl = canvas.toDataURL('image/png');
+                const a = document.createElement('a');
+                a.download = 'drawing.png';
+                a.href = pngUrl;
+                a.click();
+
+                // Prepare form data for server upload
+                const formData = new FormData();
+                formData.append('svg', svgBlob, 'drawing.svg');
+                canvas.toBlob((pngBlob) => {
+                    formData.append('png', pngBlob, 'drawing.png');
+                    
+                    // Send to server (replace with your endpoint)
+                    fetch('YOUR_SERVER_ENDPOINT', {
+                        method: 'POST',
+                        body: formData
+                    }).then(response => {
+                        console.log('Files uploaded successfully');
+                    }).catch(error => {
+                        console.error('Error uploading files:', error);
+                    });
+                }, 'image/png');
+            };
+            
+            img.src = url;
+        }
+    </script>
+
+</body>
+</html>
