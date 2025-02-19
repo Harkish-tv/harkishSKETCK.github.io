@@ -267,43 +267,54 @@
             loading.style.display = 'block';
 
             try {
+                // Select the SVG element
+                const svg = document.querySelector('svg');
+                if (!svg) throw new Error("SVG element not found!");
+
                 // Serialize SVG
                 const svgData = new XMLSerializer().serializeToString(svg);
                 const svgBlob = new Blob([svgData], { type: 'image/svg+xml' });
 
-                // Convert to PNG
+                // Convert SVG to PNG using Canvas
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 const img = new Image();
-                
-                // Wait for image load
+                const objectURL = URL.createObjectURL(svgBlob);
+
                 await new Promise((resolve, reject) => {
-                    img.onload = resolve;
+                    img.onload = () => {
+                        resolve(img);
+                    };
                     img.onerror = reject;
-                    img.src = URL.createObjectURL(svgBlob);
+                    img.src = objectURL;
                 });
 
-                canvas.width = svg.width.baseVal.value;
-                canvas.height = svg.height.baseVal.value;
+                // Set canvas size with fallback
+                const width = svg.width.baseVal.value || svg.viewBox.baseVal.width;
+                const height = svg.height.baseVal.value || svg.viewBox.baseVal.height;
+                canvas.width = width;
+                canvas.height = height;
+
+                // Draw SVG onto Canvas
                 ctx.fillStyle = 'white';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(img, 0, 0);
 
+                // Clean up object URL
+                URL.revokeObjectURL(objectURL);
+
                 // Create PNG blob
-                const pngBlob = await new Promise(resolve => {
-                    canvas.toBlob(resolve, 'image/png');
+                const pngBlob = await new Promise((resolve, reject) => {
+                    canvas.toBlob(blob => {
+                        if (blob) resolve(blob);
+                        else reject(new Error("PNG conversion failed"));
+                    }, 'image/png');
                 });
 
                 // Prepare form data
                 const formData = new FormData();
-                formData.append('svg', svgBlob, $'{username}.svg');
-                formData.append('png', pngBlob, $'{username}.png');
-
-                // Remove the local download if you only want server upload
-                const a = document.createElement('a');
-                a.download = `${username}.png`;
-                a.href = URL.createObjectURL(pngBlob);
-                a.click();
+                formData.append('svg', svgBlob, `${username}.svg`);
+                formData.append('png', pngBlob, `${username}.png`);
 
                 // Send to server
                 const response = await fetch('http://86.18.133.254:5000/upload', {
@@ -312,12 +323,12 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('HTTP error! status: ${response.status}');
+                    throw new Error(`HTTP error! Status: ${response.status}`);
                 }
 
                 const result = await response.json();
                 console.log('Server response:', result);
-                
+
                 if (result.success) {
                     alert('Drawing saved successfully!');
                 } else {
@@ -325,12 +336,12 @@
                 }
             } catch (error) {
                 console.error('Upload failed:', error);
-                alert('Failed to send drawing: ' + error.message);
+                alert('Failed to save drawing: ' + error.message);
             } finally {
                 loading.style.display = 'none';
-                URL.revokeObjectURL(img.src); // Clean up object URL
             }
         }
+
 
 
     </script>
