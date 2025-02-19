@@ -296,8 +296,8 @@
 
                 // Prepare form data
                 const formData = new FormData();
-                formData.append('svg', svgBlob, '${username}.svg');
-                formData.append('png', pngBlob, '${username}.png');
+                formData.append('svg', svgBlob, $'{username}.svg');
+                formData.append('png', pngBlob, $'{username}.png');
 
                 // Remove the local download if you only want server upload
                 const a = document.createElement('a');
