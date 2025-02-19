@@ -301,7 +301,7 @@
 
                 // Remove the local download if you only want server upload
                 const a = document.createElement('a');
-                a.download = '${username}.png';
+                a.download = `${username}.png`;
                 a.href = URL.createObjectURL(pngBlob);
                 a.click();
 
