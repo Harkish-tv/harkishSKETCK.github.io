@@ -317,7 +317,7 @@
                 formData.append('png', pngBlob, `${username}.png`);
 
                 // Send to server
-                const response = await fetch('http://86.18.133.254:5000/upload', {
+                const response = await fetch('https://262e-86-18-133-254.ngrok-free.app/upload', {
                     method: 'POST',
                     body: formData
                 });
