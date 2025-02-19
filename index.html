@@ -20,7 +20,7 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             padding: 24px;
             width: 90%;
-            max-width: 1200px;
+            max-width: 600px;
             margin: 0 auto;
         }
 
@@ -37,6 +37,23 @@
             margin-bottom: 20px;
             flex-wrap: wrap;
             justify-content: center;
+            align-items: center;
+        }
+
+        #username {
+            padding: 10px 20px;
+            border: 2px solid #dfe6e9;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            min-width: 200px;
+            transition: all 0.2s ease;
+        }
+
+        #username:focus {
+            outline: none;
+            border-color: #00b894;
+            box-shadow: 0 0 0 3px rgba(0, 184, 148, 0.1);
         }
 
         button {
@@ -83,7 +100,7 @@
             touch-action: none;
             background: white;
             width: 100%;
-            height: 900px;
+            height: 848px;
         }
 
         .credit {
@@ -120,6 +137,7 @@
     <div class="container">
         <h1>✏️ Sketch With Scribi</h1>
         <div class="controls">
+            <input type="text" id="username" placeholder="Enter your username">
             <button id="resetBtn" onclick="resetDrawing()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M2.5 2v6h6M21.5 22v-6h-6M22 11.5A10 10 0 0 0 5.68 3.68M2 12.5a10 10 0 0 0 16.32 6.32"/>
@@ -248,55 +266,62 @@
         }
 
         async function sendDrawing() {
-            // Get SVG data
-            const svgData = new XMLSerializer().serializeToString(svg);
-            const svgBlob = new Blob([svgData], {type: 'image/svg+xml'});
-            
-            // Create PNG from SVG
-            const img = new Image();
-            const url = URL.createObjectURL(svgBlob);
-            
-            img.onload = async () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = svg.width.baseVal.value;
-                canvas.height = svg.height.baseVal.value;
-                const ctx = canvas.getContext('2d');
-                
-                // Draw white background
-                ctx.fillStyle = 'white';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                // Draw SVG image
-                ctx.drawImage(img, 0, 0);
-                
-                // Download PNG
-                const pngUrl = canvas.toDataURL('image/png');
-                const a = document.createElement('a');
-                a.download = 'drawing.png';
-                a.href = pngUrl;
-                a.click();
+            const usernameInput = document.getElementById('username');
+            let username = usernameInput.value.trim();
+            if (!username) username = 'anonymous';
 
-                // Prepare form data for server upload
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+
+            try {
+                const svgData = new XMLSerializer().serializeToString(svg);
+                const svgBlob = new Blob([svgData], {type: 'image/svg+xml'});
+                
+                // Convert to PNG
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                const pngConversion = new Promise((resolve) => {
+                    img.onload = () => {
+                        canvas.width = svg.width.baseVal.value;
+                        canvas.height = svg.height.baseVal.value;
+                        ctx.fillStyle = 'white';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0);
+                        resolve();
+                    };
+                    img.src = URL.createObjectURL(new Blob([svgData], {type: 'image/svg+xml'}));
+                });
+
+                await pngConversion;
+                
+                const pngBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                
+                // Prepare form data
                 const formData = new FormData();
-                formData.append('svg', svgBlob, 'drawing.svg');
-                canvas.toBlob((pngBlob) => {
-                    formData.append('png', pngBlob, 'drawing.png');
-                    
-                    // Send to server (replace with your endpoint)
-                    fetch('YOUR_SERVER_ENDPOINT', {
-                        method: 'POST',
-                        body: formData
-                    }).then(response => {
-                        console.log('Files uploaded successfully');
-                    }).catch(error => {
-                        console.error('Error uploading files:', error);
-                    });
-                }, 'image/png');
-            };
-            
-            img.src = url;
+                formData.append('svg', svgBlob, `${username}.svg`);
+                formData.append('png', pngBlob, `${username}.png`);
+
+                // Update with your server URL
+                const response = await fetch('http://YOUR_SERVER_IP:5000/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('Drawing saved successfully!');
+                } else {
+                    alert('Error saving drawing: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to save drawing');
+            } finally {
+                loading.style.display = 'none';
+            }
         }
     </script>
-
 </body>
 </html>
