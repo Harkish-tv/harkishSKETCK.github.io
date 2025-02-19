@@ -270,64 +270,45 @@
             let username = usernameInput.value.trim();
             if (!username) username = 'anonymous';
 
-            const loading = document.getElementById('loading');
-            loading.style.display = 'block';
-
-            try {
-                // Serialize the SVG
-                const svgData = new XMLSerializer().serializeToString(svg);
-                const svgBlob = new Blob([svgData], { type: 'image/svg+xml' });
-
-                // Convert SVG to PNG using a Canvas
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const svgBlob = new Blob([svgData], {type: 'image/svg+xml'});
+            
+            const img = new Image();
+            const url = URL.createObjectURL(svgBlob);
+            
+            img.onload = async () => {
                 const canvas = document.createElement('canvas');
+                canvas.width = svg.width.baseVal.value;
+                canvas.height = svg.height.baseVal.value;
                 const ctx = canvas.getContext('2d');
-                const img = new Image();
-                const url = URL.createObjectURL(svgBlob);
+                
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+                
+                const pngUrl = canvas.toDataURL('image/png');
+                const a = document.createElement('a');
+                a.download = `${username}.png`;
+                a.href = pngUrl;
+                a.click();
 
-                const pngBlob = await new Promise((resolve, reject) => {
-                    img.onload = () => {
-                        canvas.width = svg.width.baseVal.value;
-                        canvas.height = svg.height.baseVal.value;
-                        ctx.fillStyle = 'white';
-                        ctx.fillRect(0, 0, canvas.width, canvas.height);
-                        ctx.drawImage(img, 0, 0);
-                        URL.revokeObjectURL(url); // Clean up object URL
-                        
-                        canvas.toBlob(blob => {
-                            if (blob) {
-                                resolve(blob);
-                            } else {
-                                reject(new Error('PNG conversion failed'));
-                            }
-                        }, 'image/png');
-                    };
-                    img.onerror = reject;
-                    img.src = url;
-                });
-
-                // Prepare form data
                 const formData = new FormData();
                 formData.append('svg', svgBlob, `${username}.svg`);
-                formData.append('png', pngBlob, `${username}.png`);
-
-                // Send request
-                const response = await fetch('http://86.18.133.254:5000/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    alert('Drawing saved successfully!');
-                } else {
-                    alert('Error saving drawing: ' + (result.error || 'Unknown error'));
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Failed to save drawing');
-            } finally {
-                loading.style.display = 'none';
-            }
+                canvas.toBlob((pngBlob) => {
+                    formData.append('png', pngBlob, `${username}.png`);
+                    
+                    fetch('http://86.18.133.254:5000/upload', {
+                        method: 'POST',
+                        body: formData
+                    }).then(response => {
+                        console.log('Files uploaded successfully');
+                    }).catch(error => {
+                        console.error('Error uploading files:', error);
+                    });
+                }, 'image/png');
+            };
+            
+            img.src = url;
         }
 
 
