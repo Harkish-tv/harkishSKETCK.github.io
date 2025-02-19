@@ -317,7 +317,11 @@
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Failed to save drawing');
+                alert(`Failed to save drawing: ${error.message}`);
+                // Add this to see server response even on errors:
+                if (response) {
+                    console.log('Server response:', await response.text());
+                }
             } finally {
                 loading.style.display = 'none';
             }
