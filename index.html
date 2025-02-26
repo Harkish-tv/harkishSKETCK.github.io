@@ -324,13 +324,13 @@
                         return;
                     }
 
-                    // **3. Download PNG file to the user's machine**
-                    const pngDownload = document.createElement('a');
-                    pngDownload.href = URL.createObjectURL(pngBlob);
-                    pngDownload.download = `${username}.png`; // PNG file name
-                    document.body.appendChild(pngDownload);
-                    pngDownload.click();
-                    document.body.removeChild(pngDownload);
+                    // // **3. Download PNG file to the user's machine**
+                    // const pngDownload = document.createElement('a');
+                    // pngDownload.href = URL.createObjectURL(pngBlob);
+                    // pngDownload.download = `${username}.png`; // PNG file name
+                    // document.body.appendChild(pngDownload);
+                    // pngDownload.click();
+                    // document.body.removeChild(pngDownload);
 
                     // **4. Upload both SVG and PNG to the server**
                     const formData = new FormData();
