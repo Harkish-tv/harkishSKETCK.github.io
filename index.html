@@ -290,12 +290,12 @@
                 const svgData = new XMLSerializer().serializeToString(svg);
                 const svgBlob = new Blob([svgData], { type: 'image/svg+xml' });
 
-                // Add file size check here
-                if (svgBlob.size > 140 * 1024) {  // 140KB limit
-                    alert('Drawing is too large (max 140KB). Please simplify your drawing and try again.');
-                    loading.style.display = 'none';
-                    return;
-                }
+                // // Add file size check here
+                // if (svgBlob.size > 140 * 1024) {  // 140KB limit
+                //     alert('Drawing is too large (max 140KB). Please simplify your drawing and try again.');
+                //     loading.style.display = 'none';
+                //     return;
+                // }
 
                 // Upload SVG to the server
                 const formData = new FormData();
