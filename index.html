@@ -291,8 +291,8 @@
                 const svgBlob = new Blob([svgData], { type: 'image/svg+xml' });
 
                 // Add file size check here
-                if (svgBlob.size > 160 * 1024) {  // 160KB limit
-                    alert('Drawing is too large (max 160KB). Please simplify your drawing and try again.');
+                if (svgBlob.size > 140 * 1024) {  // 140KB limit
+                    alert('Drawing is too large (max 140KB). Please simplify your drawing and try again.');
                     loading.style.display = 'none';
                     return;
                 }
