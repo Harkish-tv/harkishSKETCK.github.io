@@ -193,7 +193,7 @@
                 Redo
             </button>
             <button id="sendBtn" onclick="sendDrawing()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
                 </svg>
                 Send
@@ -238,7 +238,7 @@
             currentPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             currentPath.setAttribute('stroke', '#000000');
             currentPath.setAttribute('fill', 'none');
-            currentPath.setAttribute('stroke-width', '2');
+            currentPath.setAttribute('stroke-width', '4');
             currentPath.setAttribute('d', `M ${point.x} ${point.y}`);
             
             svg.appendChild(currentPath);
