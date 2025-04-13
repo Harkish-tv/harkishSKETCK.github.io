@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Sketch Pad</title>
+    <title>Scribi - Sketch Pad</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -122,6 +122,41 @@
             font-size: 0.9em;
         }
 
+        .progress-container {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .progress-bar {
+            flex-grow: 1;
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background-color: #00b894;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-fill.over-limit {
+            background-color: #ff1d1d; /* Red color when over limit */
+        }
+
+        .progress-text {
+            font-size: 0.9em;
+            color: #636e72;
+            min-width: 100px;
+            text-align: right;
+        }
+
         @media (max-width: 600px) {
             .container {
                 padding: 15px;
@@ -164,10 +199,17 @@
                 Send
             </button>
         </div>
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div id="progressBarFill" class="progress-fill"></div>
+            </div>
+            <span id="progressBarText" class="progress-text">0KB / 140KB</span>
+        </div>
         <svg id="drawArea" width="600" height="848"></svg>
     </div>
     
     <div class="credit">Draw something amazing! (Click and drag to sketch)</div>
+    <div class="credit">The drawing limit 140KB as swhon in the pgogress bar above</div>
     <div class="loading" id="loading">Sending...</div>
 
     <script>
@@ -201,6 +243,28 @@
             
             svg.appendChild(currentPath);
         }
+        
+        function updateProgress() {
+            const svgString = new XMLSerializer().serializeToString(svg);
+            const encoder = new TextEncoder();
+            const data = encoder.encode(svgString);
+            const currentSize = data.length;
+            const maxSize = 140 * 1024; // 140KB
+            const percentage = Math.min((currentSize / maxSize) * 100, 100);
+            const progressFill = document.getElementById('progressBarFill');
+
+            // Update progress bar color
+            if (currentSize > maxSize) {
+                progressFill.classList.add('over-limit');
+            } else {
+                progressFill.classList.remove('over-limit');
+            }
+
+            // Update progress bar width and text
+            progressFill.style.width = percentage + '%';
+            document.getElementById('progressBarText').textContent = 
+                `${Math.round(currentSize/1024)}KB / 140KB`;
+        }
 
         function draw(e) {
             if (!isDrawing) return;
@@ -208,6 +272,7 @@
             const point = getCoordinates(e);
             const pathData = currentPath.getAttribute('d');
             currentPath.setAttribute('d', `${pathData} L ${point.x} ${point.y}`);
+            updateProgress();
         }
 
         function endDrawing() {
@@ -221,6 +286,7 @@
                 svg.removeChild(currentPath);
             }
             currentPath = null;
+            updateProgress();
         }
 
         function getCoordinates(e) {
@@ -247,6 +313,7 @@
             svg.innerHTML = '';
             history = [];
             currentStep = -1;
+            updateProgress();
         }
 
         function undo() {
@@ -257,6 +324,7 @@
                 currentStep--;
                 svg.innerHTML = '';
             }
+            updateProgress();
         }
 
         function redo() {
@@ -264,6 +332,7 @@
                 currentStep++;
                 svg.innerHTML = history[currentStep];
             }
+            updateProgress();
         }
 
 
@@ -283,6 +352,17 @@
                 return;
             }
 
+            // Check size before sending
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const encoder = new TextEncoder();
+            const data = encoder.encode(svgData);
+            const currentSize = data.length;
+
+            if (currentSize > 140 * 1024) {
+                alert('Drawing exceeds 140KB limit. Please simplify your drawing.');
+                return;
+            }
+
             const loading = document.getElementById('loading');
             loading.style.display = 'block';
 
@@ -290,12 +370,7 @@
                 const svgData = new XMLSerializer().serializeToString(svg);
                 const svgBlob = new Blob([svgData], { type: 'image/svg+xml' });
 
-                // // Add file size check here
-                // if (svgBlob.size > 140 * 1024) {  // 140KB limit
-                //     alert('Drawing is too large (max 140KB). Please simplify your drawing and try again.');
-                //     loading.style.display = 'none';
-                //     return;
-                // }
+             
 
                 // Upload SVG to the server
                 const formData = new FormData();
