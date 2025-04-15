@@ -264,7 +264,7 @@
             const encoder = new TextEncoder();
             const data = encoder.encode(svgString);
             const currentSize = data.length;
-            const maxSize = 140 * 1024; // 140KB
+            const maxSize = 250 * 1024; // 140KB
             const percentage = Math.min((currentSize / maxSize) * 100, 100);
             const progressFill = document.getElementById('progressBarFill');
 
