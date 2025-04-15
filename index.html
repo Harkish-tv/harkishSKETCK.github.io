@@ -204,13 +204,13 @@
             <div class="progress-bar">
                 <div id="progressBarFill" class="progress-fill"></div>
             </div>
-            <span id="progressBarText" class="progress-text">0KB / 140KB</span>
+            <span id="progressBarText" class="progress-text">0KB / 250KB</span>
         </div>
         <svg id="drawArea" width="600" height="848"></svg>
     </div>
     
     <div class="credit">Draw something amazing! (Click and drag to sketch)</div>
-    <div class="credit">The drawing limit 140KB as swhon in the pgogress bar above</div>
+    <div class="credit">The drawing limit 250KB as swhon in the progress bar above</div>
     <div class="loading" id="loading">Sending...</div>
 
     <script>
@@ -264,7 +264,7 @@
             const encoder = new TextEncoder();
             const data = encoder.encode(svgString);
             const currentSize = data.length;
-            const maxSize = 250 * 1024; // 140KB
+            const maxSize = 250 * 1024; // 250KB
             const percentage = Math.min((currentSize / maxSize) * 100, 100);
             const progressFill = document.getElementById('progressBarFill');
 
@@ -278,7 +278,7 @@
             // Update progress bar width and text
             progressFill.style.width = percentage + '%';
             document.getElementById('progressBarText').textContent = 
-                `${Math.round(currentSize/1024)}KB / 140KB`;
+                `${Math.round(currentSize/1024)}KB / ${maxSize/1024}KB`;
         }
 
         function draw(e) {
