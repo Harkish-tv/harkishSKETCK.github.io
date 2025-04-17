@@ -373,7 +373,7 @@
             const data = encoder.encode(svgData);
             const currentSize = data.length;
 
-            if (currentSize > 140 * 1024) {
+            if (currentSize > 250 * 1024) {
                 alert('Drawing exceeds 140KB limit. Please simplify your drawing.');
                 return;
             }
